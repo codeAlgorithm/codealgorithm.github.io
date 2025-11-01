@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Algorithm Visualizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+                            800: '#1e40af', 900: '#1e3a8a', 950: '#172554'
+                        }
+                    },
+                    // For API loading spinner
+                    keyframes: {
+                        spin: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        },
+                    },
+                    animation: {
+                        spin: 'spin 1s linear infinite',
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Heroicons -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/heroicons@2.1.3/24/outline/index.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'sans-serif';
+        }
+        canvas {
+            background-color: #f9fafb; /* Light mode canvas */
+        }
+        html.dark canvas {
+            background-color: #1f2937; /* Dark mode canvas */
+        }
+        .sidebar-link.active {
+            background-color: theme('colors.primary.500');
+            color: white;
+        }
+        html.dark .sidebar-link.active {
+            background-color: theme('colors.primary.600');
+        }
+        .tab-link.active {
+            border-color: theme('colors.primary.500');
+            color: theme('colors.primary.500');
+        }
+        html.dark .tab-link.active {
+            border-color: theme('colors.primary.400');
+            color: theme('colors.primary.400');
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 antialiased">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <nav class="w-72 h-full bg-white dark:bg-gray-800 shadow-lg flex-shrink-0 overflow-y-auto">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-primary-600 dark:text-primary-400">AlgoVisualizer</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Advanced Edition</p>
+            </div>
+
+            <!-- Algorithm List -->
+            <div class="px-4">
+                <h2 class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sorting Algorithms</h2>
+                <ul class="mt-2 space-y-1" id="algorithm-list-sorting">
+                    <li><a href="#" class="sidebar-link" data-algo="bubbleSort">Bubble Sort</a></li>
+                    <li><a href="#" class="sidebar-link" data-algo="selectionSort">Selection Sort</a></li>
+                    <li><a href="#" class="sidebar-link" data-algo="quickSort">Quick Sort</a></li>
+                    <li><a href="#" class="sidebar-link" data-algo="mergeSort">Merge Sort</a></li>
+                </ul>
+
+                <h2 class="mt-6 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pathfinding & Graph</h2>
+                <ul class="mt-2 space-y-1" id="algorithm-list-pathfinding">
+                    <li><a href="#" class="sidebar-link" data-algo="bfs">Breadth-First Search (BFS)</a></li>
+                    <li><a href="#" class="sidebar-link" data-algo="dijkstra">Dijkstra's Algorithm</a></li>
+                    <li><a href="#" class="sidebar-link" data-algo="aStar">A* (A-Star) Search</a></li>
+                </ul>
+
+                <h2 class="mt-6 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Advanced</h2>
+                <ul class="mt-2 space-y-1" id="algorithm-list-custom">
+                    <li><a href="#" class="sidebar-link" data-algo="custom">Custom Code (Sorting)</a></li>
+                </ul>
+            </div>
+            
+            <!-- Dark Mode Toggle -->
+            <div class="absolute bottom-4 left-4">
+                <button id="darkModeToggle" class="p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <svg id="theme-icon-light" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="theme-icon-dark" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden">
+            <!-- Controls Header -->
+            <header class="h-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 flex items-center justify-between px-6">
+                <div class="flex items-center space-x-4">
+                    <button id="playPauseBtn" class="p-2 rounded-full text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 shadow">
+                        <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clip-rule="evenodd" /></svg>
+                        <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 hidden"><path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75H7.5a.75.75 0 0 1-.75-.75V5.25Zm7.5 0a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75v13.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75V5.25Z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <button id="resetBtn" class="p-2 rounded-full text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M4.755 10.059a7.5 7.5 0 0 1 12.548-3.364l1.903 1.903h-5.652V3.602l1.903 1.903A9 9 0 0 0 3.075 10.5l1.68 1.68c.201-.64.449-1.253.74-1.842ZM21.925 13.5a9 9 0 0 0-16.526 3.075l-1.68-1.68a7.5 7.5 0 0 1 12.548 3.364l-1.903-1.903h5.652v4.997l-1.903-1.903A9 9 0 0 0 21.925 13.5Z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <button id="newDataBtn" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600">
+                        New Data
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label for="speedSlider" class="text-sm font-medium">Speed:</label>
+                    <input id="speedSlider" type="range" min="1" max="100" value="50" class="w-48">
+                </div>
+            </header>
+
+            <!-- Visualization Area & Info Panel -->
+            <div class="flex-1 flex p-6 space-x-6 overflow-hidden">
+                <!-- Canvas -->
+                <div class="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 id="canvasTitle" class="text-lg font-semibold">Please select an algorithm</h2>
+                    </div>
+                    <div class="flex-1 p-4 relative">
+                        <canvas id="visualizerCanvas" class="w-full h-full rounded"></canvas>
+                        <!-- Pathfinding Controls -->
+                        <div id="pathfinding-controls" class="absolute top-6 left-6 space-x-2 hidden">
+                            <span class="text-sm font-medium">Mode:</span>
+                            <button class="px-3 py-1 text-sm rounded-md bg-blue-100 text-blue-700" data-mode="setStart">Set Start</button>
+                            <button class="px-3 py-1 text-sm rounded-md bg-red-100 text-red-700" data-mode="setEnd">Set End</button>
+                            <button class="px-3 py-1 text-sm rounded-md bg-gray-200 text-gray-700" data-mode="setWall">Draw Walls</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info / Code Panel -->
+                <div class="w-1/3 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <!-- Tabs -->
+                    <div class="border-b border-gray-200 dark:border-gray-700">
+                        <nav class="flex -mb-px" id="tabs">
+                            <a href="#" class="tab-link active" data-tab="description">Description</a>
+                            <a href="#" class="tab-link" data-tab="pseudocode">Pseudocode</a>
+                            <a href="#" class="tab-link" data-tab="customCode" id="customCodeTab">Custom Code</a>
+                        </nav>
+                    </div>
+                    <!-- Tab Content -->
+                    <div class="flex-1 p-6 overflow-y-auto">
+                        <div id="tab-content-description" class="tab-content prose dark:prose-invert">
+                            <p>Please select an algorithm from the left to begin.</p>
+                        </div>
+                        <div id="tab-content-pseudocode" class="tab-content hidden">
+                            <pre><code class="language-pseudo">...</code></pre>
+                        </div>
+                        <div id="tab-content-customCode" class="tab-content hidden h-full">
+                            <div class="flex flex-col h-full">
+                                <div class="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-200 p-4 rounded mb-4">
+                                    <p class="font-bold">Security Warning!</p>
+                                    <p class="text-sm">Executing arbitrary code can be dangerous. This feature is for educational purposes only. Only run code you have written or fully understand.</p>
+                                </div>
+                                <label for="customCodeTextarea" class="text-sm font-medium mb-2">Custom Sorting Algorithm (Async Generator)</label>
+                                <textarea id="customCodeTextarea" class="w-full flex-1 font-mono text-sm p-3 rounded-md bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    placeholder="Enter your async generator code here...&#10;&#10;// Example:&#10;// for (let i = 0; i < arr.length; i++) {&#10;//   ...&#10;//   yield { array: [...arr], highlights: { [i]: 'red' } };&#10;// }"></textarea>
+                                <p class="text-xs text-gray-500 mt-2">API: Your code runs as the body of an `async function*(arr)`. You must `yield` an object like `{ array: [...arr], highlights: { index: 'color' } }` to update the visualization.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // --- Global State ---
+        let currentAlgorithm = null;
+        let animationSpeed = 100; // ms
+        let isPaused = true;
+        let abortController = new AbortController();
+        let mainCanvas, ctx;
+        let canvasContainer;
+
+        // Sorting state
+        let sortArray = [];
+        let sortArraySize = 50;
+
+        // Pathfinding state
+        let grid = [];
+        let startNode = null;
+        let endNode = null;
+        let pathfindingMode = 'setWall'; // 'setStart', 'setEnd', 'setWall'
+        const GRID_COLS = 40;
+        const GRID_ROWS = 30;
+        let cellSize = 20;
+        let isDrawingWalls = false;
+
+        // DOM Elements
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const resetBtn = document.getElementById('resetBtn');
+        const newDataBtn = document.getElementById('newDataBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const canvasTitle = document.getElementById('canvasTitle');
+        const tabs = document.getElementById('tabs');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const customCodeTab = document.getElementById('customCodeTab');
+        const customCodeTextarea = document.getElementById('customCodeTextarea');
+        const pathfindingControls = document.getElementById('pathfinding-controls');
+
+        // --- Algorithm Info & API Mapping ---
+        const algorithmInfo = {
+            bubbleSort: {
+                title: "Bubble Sort",
+                wikiTitle: "Bubble sort",
+                description: "<p>Bubble Sort is a simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.</p><p>Time Complexity: O(n²)</p>",
+                pseudocode: `function BubbleSort(A):
+    for i from 0 to A.length - 1:
+        for j from 0 to A.length - 1 - i:
+            if A[j] > A[j+1]:
+                swap(A[j], A[j+1])`
+            },
+            selectionSort: {
+                title: "Selection Sort",
+                wikiTitle: "Selection sort",
+                description: "<p>Selection Sort divides the input list into two parts: a sorted sublist and an unsorted sublist. It repeatedly finds the minimum element from the unsorted part and moves it to the sorted part.</p><p>Time Complexity: O(n²)</p>",
+                pseudocode: `function SelectionSort(A):
+    for i from 0 to A.length - 1:
+        min_index = i
+        for j from i + 1 to A.length:
+            if A[j] < A[min_index]:
+                min_index = j
+        swap(A[i], A[min_index])`
+            },
+            quickSort: {
+                title: "Quick Sort",
+                wikiTitle: "Quicksort",
+                description: "<p>Quicksort is an efficient, divide-and-conquer sorting algorithm. It works by selecting a 'pivot' element and partitioning the other elements into two sub-arrays, according to whether they are less than or greater than the pivot.</p><p>Average Time: O(n log n)</p>",
+                pseudocode: `function QuickSort(A, low, high):
+    if low < high:
+        pivot_index = Partition(A, low, high)
+        QuickSort(A, low, pivot_index - 1)
+        QuickSort(A, pivot_index + 1, high)`
+            },
+            mergeSort: {
+                title: "Merge Sort",
+                wikiTitle: "Merge sort",
+                description: "<p>Merge Sort is a divide-and-conquer algorithm. It divides the unsorted list into n sublists, each containing one element, then repeatedly merges sublists to produce new sorted sublists until only one sublist remains.</p><p>Time Complexity: O(n log n)</p>",
+                pseudocode: `function MergeSort(A):
+    if A.length <= 1:
+        return A
+    mid = A.length / 2
+    left = MergeSort(A[0...mid])
+    right = MergeSort(A[mid...end])
+    return Merge(left, right)`
+            },
+            bfs: {
+                title: "Breadth-First Search (BFS)",
+                wikiTitle: "Breadth-first search",
+                description: "<p>BFS is an algorithm for traversing or searching tree or graph data structures. It starts at the root and explores all of the neighbor nodes at the present depth prior to moving on to the nodes at the next depth level.</p>",
+                pseudocode: `function BFS(graph, startNode):
+    queue = new Queue()
+    visited = new Set()
+    
+    queue.enqueue(startNode)
+    visited.add(startNode)
+
+    while queue is not empty:
+        current = queue.dequeue()
+        process(current)
+        
+        for neighbor in current.neighbors:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.enqueue(neighbor)`
+            },
+            dijkstra: {
+                title: "Dijkstra's Algorithm",
+                wikiTitle: "Dijkstra's algorithm",
+                description: "<p>Dijkstra's algorithm finds the shortest paths between nodes in a graph. It picks the unvisited node with the lowest distance, calculates the distance through it to each unvisited neighbor, and updates the neighbor's distance if smaller.</p>",
+                pseudocode: `function Dijkstra(Graph, source):
+    create vertex set Q
+    for each vertex v in Graph:
+        dist[v] = INFINITY
+        add v to Q
+    dist[source] = 0
+
+    while Q is not empty:
+        u = vertex in Q with min dist[u]
+        remove u from Q
+        
+        for each neighbor v of u:
+            alt = dist[u] + length(u, v)
+            if alt < dist[v]:
+                dist[v] = alt`
+            },
+            aStar: {
+                title: "A* (A-Star) Search",
+                wikiTitle: "A* search algorithm",
+                description: "<p>A* is a pathfinding algorithm known for its performance and accuracy. It uses a heuristic function, f(n) = g(n) + h(n), to determine the order in which to visit nodes, combining the cost from the start (g) and the estimated cost to the goal (h).</p>",
+                pseudocode: `function AStar(start, goal):
+    openSet = {start}
+    gScore[start] = 0
+    fScore[start] = heuristic(start, goal)
+
+    while openSet is not empty:
+        current = node in openSet with lowest fScore
+        if current == goal:
+            return reconstruct_path(current)
+        
+        remove current from openSet
+        for each neighbor of current:
+            tentative_gScore = gScore[current] + dist(current, neighbor)
+            if tentative_gScore < gScore[neighbor]:
+                gScore[neighbor] = tentative_gScore
+                fScore[neighbor] = gScore[neighbor] + heuristic(neighbor, goal)
+                if neighbor not in openSet:
+                    add neighbor to openSet`
+            },
+            custom: {
+                title: "Custom Code (Sorting)",
+                wikiTitle: "Algorithm", // Generic title
+                description: "<p>Write your own sorting algorithm below. Your code will run as an async generator. Use `yield` to return the state at each step.</p><p><b>API:</b> Your function body receives `arr`. You must `yield` an object: `{ array: [...arr], highlights: { index: 'color' } }`.</p>",
+                pseudocode: `// This is an example to paste in the Custom Code tab:
+// Implements a reverse Bubble Sort
+
+for (let i = 0; i < arr.length - 1; i++) {
+    for (let j = 0; j < arr.length - i - 1; j++) {
+        
+        // Highlight elements being compared
+        yield { 
+            array: [...arr], 
+            highlights: { [j]: '#EF4444', [j + 1]: '#3B82F6' } 
+        };
+
+        if (arr[j] < arr[j + 1]) { // Note: this is <
+            
+            // Swap
+            [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+            
+            // Highlight swapped elements
+            yield { 
+                array: [...arr], 
+                highlights: { [j]: '#22C55E', [j + 1]: '#22C55E' } 
+            };
+        }
+    }
+}
+// Return final state
+yield { array: [...arr], highlights: {} };
+`
+            }
+        };
+
+        // --- Core Utilities ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        // --- Sorting Algorithms ---
+        
+        async function* bubbleSort(arr) {
+            let n = arr.length;
+            let swapped;
+            do {
+                swapped = false;
+                for (let i = 0; i < n - 1; i++) {
+                    yield { array: [...arr], highlights: { [i]: '#EF4444', [i + 1]: '#3B82F6', ...createHighlightDone(n, arr.length, true) } };
+                    if (arr[i] > arr[i + 1]) {
+                        [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                        swapped = true;
+                        yield { array: [...arr], highlights: { [i]: '#22C55E', [i + 1]: '#22C55E', ...createHighlightDone(n, arr.length, true) } };
+                    }
+                }
+                n--; // Optimization
+            } while (swapped);
+            return { array: [...arr], highlights: createHighlightDone(0, arr.length, false) };
+        }
+
+        async function* selectionSort(arr) {
+            let n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                yield { array: [...arr], highlights: { [i]: '#F59E0B', ...createHighlightDone(i, arr.length, false) } };
+                for (let j = i + 1; j < n; j++) {
+                    yield { array: [...arr], highlights: { [i]: '#F59E0B', [j]: '#3B82F6', [minIdx]: '#EF4444', ...createHighlightDone(i, arr.length, false) } };
+                    if (arr[j] < arr[minIdx]) {
+                        minIdx = j;
+                        yield { array: [...arr], highlights: { [i]: '#F59E0B', [j]: '#EF4444', ...createHighlightDone(i, arr.length, false) } };
+                    }
+                }
+                if (minIdx !== i) {
+                    [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+                    yield { array: [...arr], highlights: { [i]: '#22C55E', [minIdx]: '#22C55E', ...createHighlightDone(i, arr.length, false) } };
+                }
+            }
+            return { array: [...arr], highlights: createHighlightDone(0, arr.length, false) };
+        }
+        
+        async function* quickSort(arr) {
+            const stack = [[0, arr.length - 1]];
+            const highlights = {};
+
+            while (stack.length > 0) {
+                const [low, high] = stack.pop();
+
+                if (low >= high) {
+                    if (low === high) highlights[low] = '#22C55E';
+                    continue;
+                }
+
+                const pivot = arr[high];
+                let i = low - 1;
+                highlights[high] = '#F59E0B'; // Pivot
+
+                for (let j = low; j < high; j++) {
+                    highlights[j] = '#3B82F6'; // Comparing
+                    yield { array: [...arr], highlights: { ...highlights } };
+                    
+                    if (arr[j] < pivot) {
+                        i++;
+                        [arr[i], arr[j]] = [arr[j], arr[i]];
+                        highlights[i] = '#EF4444'; // Swapped-to
+                        yield { array: [...arr], highlights: { ...highlights } };
+                        delete highlights[i];
+                    }
+                    delete highlights[j];
+                }
+
+                [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+                const pi = i + 1;
+                
+                delete highlights[high];
+                highlights[pi] = '#22C55E'; // Sorted position
+                yield { array: [...arr], highlights: { ...highlights } };
+
+                stack.push([low, pi - 1]);
+                stack.push([pi + 1, high]);
+            }
+            
+            for(let i=0; i<arr.length; i++) highlights[i] = '#22C55E';
+            yield { array: [...arr], highlights };
+        }
+
+        async function* mergeSort(arr) {
+            // This is a complex visualization. We'll visualize the merging.
+            // We need an auxiliary array for in-place visualization
+            let aux = [...arr];
+            const highlights = {};
+
+            async function* merge(low, mid, high) {
+                let i = low, j = mid + 1;
+                
+                // Copy to auxiliary array
+                for (let k = low; k <= high; k++) {
+                    aux[k] = arr[k];
+                    highlights[k] = '#F59E0B'; // Highlight segment
+                }
+                yield { array: [...arr], highlights: { ...highlights } };
+
+                for (let k = low; k <= high; k++) {
+                    delete highlights[k];
+                    if (i > mid) {
+                        arr[k] = aux[j++];
+                        highlights[k] = '#3B82F6'; // From right
+                    } else if (j > high) {
+                        arr[k] = aux[i++];
+                        highlights[k] = '#EF4444'; // From left
+                    } else if (aux[j] < aux[i]) {
+                        arr[k] = aux[j++];
+                        highlights[k] = '#3B82F6'; // From right
+                    } else {
+                        arr[k] = aux[i++];
+                        highlights[k] = '#EF4444'; // From left
+                    }
+                    yield { array: [...arr], highlights: { ...highlights } };
+                    delete highlights[k];
+                }
+            }
+
+            async function* sort(low, high) {
+                if (high <= low) return;
+                const mid = Math.floor(low + (high - low) / 2);
+                yield* sort(low, mid);
+                yield* sort(mid + 1, high);
+                yield* merge(low, mid, high);
+                
+                // Mark segment as sorted
+                for (let i = low; i <= high; i++) highlights[i] = '#22C55E';
+                yield { array: [...arr], highlights: { ...highlights } };
+            }
+
+            yield* sort(0, arr.length - 1);
+            yield { array: [...arr], highlights: createHighlightDone(0, arr.length, false) };
+        }
+
+
+        // --- Pathfinding Algorithms ---
+
+        class Node {
+            constructor(x, y, isWall = false) {
+                this.x = x; this.y = y; this.isWall = isWall;
+                this.g = Infinity; this.h = 0; this.f = Infinity;
+                this.parent = null;
+                this.isStart = false; this.isEnd = false;
+            }
+            reset() {
+                this.g = Infinity; this.h = 0; this.f = Infinity;
+                this.parent = null;
+            }
+        }
+        
+        function heuristic(nodeA, nodeB) {
+            return Math.abs(nodeA.x - nodeB.x) + Math.abs(nodeA.y - nodeB.y);
+        }
+
+        function getNeighbors(node, grid) {
+            const neighbors = [];
+            const { x, y } = node;
+            if (y > 0) neighbors.push(grid[y - 1][x]);
+            if (y < GRID_ROWS - 1) neighbors.push(grid[y + 1][x]);
+            if (x > 0) neighbors.push(grid[y][x - 1]);
+            if (x < GRID_COLS - 1) neighbors.push(grid[y][x + 1]);
+            return neighbors.filter(neighbor => !neighbor.isWall);
+        }
+
+        function reconstructPath(current) {
+            const path = [current];
+            while (current.parent) {
+                path.unshift(current.parent);
+                current = current.parent;
+            }
+            return path;
+        }
+        
+        async function* bfs(grid, start, end) {
+            const queue = [start];
+            const visited = new Set([start]);
+            
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                if (current === end) {
+                    const path = reconstructPath(current);
+                    yield { grid, openSet: new Set(queue), closedSet: visited, path };
+                    return;
+                }
+                
+                yield { grid, openSet: new Set(queue), closedSet: visited, path: [] };
+                
+                for (const neighbor of getNeighbors(current, grid)) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        neighbor.parent = current;
+                        queue.push(neighbor);
+                    }
+                }
+            }
+            // No path found
+            yield { grid, openSet: new Set(), closedSet: visited, path: [] };
+        }
+
+        async function* dijkstra(grid, start, end) {
+            const openSet = new Set([start]); // Using Set for simplicity; PriorityQueue is better
+            const closedSet = new Set();
+            start.g = 0;
+
+            while (openSet.size > 0) {
+                let current = [...openSet].reduce((a, b) => a.g < b.g ? a : b);
+
+                if (current === end) {
+                    const path = reconstructPath(current);
+                    yield { grid, openSet, closedSet, path };
+                    return;
+                }
+
+                openSet.delete(current);
+                closedSet.add(current);
+                yield { grid, openSet, closedSet, path: [] };
+
+                for (const neighbor of getNeighbors(current, grid)) {
+                    if (closedSet.has(neighbor)) continue;
+                    const tentative_g = current.g + 1; // Cost is 1
+                    if (tentative_g < neighbor.g) {
+                        neighbor.parent = current;
+                        neighbor.g = tentative_g;
+                        if (!openSet.has(neighbor)) openSet.add(neighbor);
+                    }
+                }
+            }
+            yield { grid, openSet, closedSet, path: [] }; // No path
+        }
+
+        async function* aStar(grid, start, end) {
+            const openSet = new Set([start]);
+            const closedSet = new Set();
+            start.g = 0;
+            start.h = heuristic(start, end);
+            start.f = start.g + start.h;
+
+            while (openSet.size > 0) {
+                let current = [...openSet].reduce((a, b) => a.f < b.f ? a : b);
+
+                if (current === end) {
+                    const path = reconstructPath(current);
+                    yield { grid, openSet, closedSet, path };
+                    return;
+                }
+
+                openSet.delete(current);
+                closedSet.add(current);
+                yield { grid, openSet, closedSet, path: [] };
+
+                for (const neighbor of getNeighbors(current, grid)) {
+                    if (closedSet.has(neighbor)) continue;
+                    const tentative_g = current.g + 1;
+                    if (tentative_g < neighbor.g) {
+                        neighbor.parent = current;
+                        neighbor.g = tentative_g;
+                        neighbor.h = heuristic(neighbor, end);
+                        neighbor.f = neighbor.g + neighbor.h;
+                        if (!openSet.has(neighbor)) openSet.add(neighbor);
+                    }
+                }
+            }
+            yield { grid, openSet, closedSet, path: [] }; // No path
+        }
+
+        // --- Drawing Functions ---
+        
+        function resizeCanvas() {
+            if (!mainCanvas || !canvasContainer) return;
+            const rect = canvasContainer.getBoundingClientRect();
+            mainCanvas.width = rect.width;
+            mainCanvas.height = rect.height;
+            
+            if (isPathfindingAlgorithm(currentAlgorithm)) {
+                cellSize = Math.min(mainCanvas.width / GRID_COLS, mainCanvas.height / GRID_ROWS);
+            } else if (isSortingAlgorithm(currentAlgorithm)) {
+                sortArraySize = Math.floor(mainCanvas.width / 8) || 50;
+            }
+            
+            drawCurrentState();
+        }
+
+        function drawCurrentState() {
+            if (!currentAlgorithm) {
+                clearCanvas();
+                return;
+            }
+            if (isSortingAlgorithm(currentAlgorithm)) {
+                drawSorting(sortArray, {}, true);
+            } else if (isPathfindingAlgorithm(currentAlgorithm)) {
+                drawPathfinding(grid, [], new Set(), new Set(), true);
+            }
+        }
+
+        function drawSorting(array, highlights = {}) {
+            if (!ctx) return;
+            const barWidth = mainCanvas.width / array.length;
+            const maxVal = Math.max(...array);
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            
+            for (let i = 0; i < array.length; i++) {
+                const barHeight = (array[i] / maxVal) * (mainCanvas.height * 0.9);
+                const x = i * barWidth;
+                const y = mainCanvas.height - barHeight;
+                ctx.fillStyle = highlights[i] || (document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280');
+                ctx.fillRect(x, y, Math.max(1, barWidth - 1), barHeight);
+            }
+        }
+        
+        function drawPathfinding(gridData, path, openSet, closedSet) {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            const offsetX = (mainCanvas.width - GRID_COLS * cellSize) / 2;
+            const offsetY = (mainCanvas.height - GRID_ROWS * cellSize) / 2;
+            const isDark = document.documentElement.classList.contains('dark');
+            const colors = {
+                wall: isDark ? '#374151' : '#1F2937', start: '#16A34A', end: '#DC2626',
+                open: isDark ? '#3B82F6' : '#93C5FD', closed: isDark ? '#60A5FA' : '#DBEAFE',
+                path: '#F59E0B', grid: isDark ? '#4B5563' : '#E5E7EB', empty: isDark ? '#1F2937' : '#F9FAFB'
+            };
+            
+            for (let y = 0; y < GRID_ROWS; y++) {
+                for (let x = 0; x < GRID_COLS; x++) {
+                    const node = gridData[y][x];
+                    let color = colors.empty;
+                    if (node.isWall) color = colors.wall;
+                    else if (closedSet.has(node)) color = colors.closed;
+                    else if (openSet.has(node)) color = colors.open;
+                    if (path.includes(node)) color = colors.path;
+                    if (node.isStart) color = colors.start;
+                    if (node.isEnd) color = colors.end;
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                    ctx.strokeStyle = colors.grid;
+                    ctx.strokeRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        function clearCanvas() {
+            if (ctx) ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+        }
+
+        // --- State & Data Initialization ---
+
+        function initializeData(algoName) {
+            if (isSortingAlgorithm(algoName)) {
+                sortArray = createRandomArray(sortArraySize);
+            } else if (isPathfindingAlgorithm(algoName)) {
+                grid = createGrid(GRID_ROWS, GRID_COLS);
+                startNode = grid[Math.floor(GRID_ROWS / 2)][Math.floor(GRID_COLS / 4)];
+                endNode = grid[Math.floor(GRID_ROWS / 2)][Math.floor(GRID_COLS * 3 / 4)];
+                startNode.isStart = true;
+                startNode.isWall = false;
+                endNode.isEnd = true;
+                endNode.isWall = false;
+                grid.forEach(row => row.forEach(n => n.reset()));
+            }
+        }
+        
+        function createRandomArray(size) {
+            return Array.from({ length: size }, () => Math.floor(Math.random() * 100) + 5);
+        }
+
+        function createGrid(rows, cols) {
+            return Array.from({ length: rows }, (_, y) => 
+                Array.from({ length: cols }, (_, x) => new Node(x, y, Math.random() < 0.25))
+            );
+        }
+
+        function createHighlightDone(start, end, fromEnd) {
+            const highlights = {};
+            if (fromEnd) {
+                for (let i = start; i < end; i++) highlights[i] = '#22C55E';
+            } else {
+                for (let i = start; i < end; i++) highlights[i] = '#22C55E';
+            }
+            return highlights;
+        }
+        
+        function isSortingAlgorithm(algoName) {
+            return algoName === 'custom' || ['bubbleSort', 'selectionSort', 'quickSort', 'mergeSort'].includes(algoName);
+        }
+        function isPathfindingAlgorithm(algoName) {
+            return ['bfs', 'dijkstra', 'aStar'].includes(algoName);
+        }
+        
+
+        // --- Core Algorithm Runner ---
+        
+        async function runAlgorithm() {
+            if (!currentAlgorithm) return;
+            abortController.abort();
+            abortController = new AbortController();
+            const signal = abortController.signal;
+
+            isPaused = false;
+            updatePlayPauseIcon();
+            playPauseBtn.disabled = false;
+            resetBtn.disabled = false;
+
+            let generator;
+            let drawFunction;
+            
+            try {
+                if (isSortingAlgorithm(currentAlgorithm)) {
+                    drawFunction = (state) => drawSorting(state.array, state.highlights);
+                    if (currentAlgorithm === 'bubbleSort') generator = bubbleSort([...sortArray]);
+                    else if (currentAlgorithm === 'selectionSort') generator = selectionSort([...sortArray]);
+                    else if (currentAlgorithm === 'quickSort') generator = quickSort([...sortArray]);
+                    else if (currentAlgorithm === 'mergeSort') generator = mergeSort([...sortArray]);
+                    else if (currentAlgorithm === 'custom') {
+                        const userCode = customCodeTextarea.value;
+                        if (!userCode) {
+                            alert("Custom code is empty!");
+                            resetControls(); return;
+                        }
+                        const AsyncGenerator = Object.getPrototypeOf(async function*(){}).constructor;
+                        const customGeneratorFunc = new AsyncGenerator('arr', userCode);
+                        generator = customGeneratorFunc([...sortArray]);
+                    }
+                } else if (isPathfindingAlgorithm(currentAlgorithm)) {
+                    drawFunction = (state) => drawPathfinding(state.grid, state.path, state.openSet, state.closedSet);
+                    grid.forEach(row => row.forEach(n => n.reset())); // Reset g/h/f scores
+                    startNode.g = 0;
+                    startNode.h = heuristic(startNode, endNode);
+                    startNode.f = startNode.g + startNode.h;
+
+                    if (currentAlgorithm === 'bfs') generator = bfs(grid, startNode, endNode);
+                    else if (currentAlgorithm === 'dijkstra') generator = dijkstra(grid, startNode, endNode);
+                    else if (currentAlgorithm === 'aStar') generator = aStar(grid, startNode, endNode);
+                }
+
+                // --- Run Loop ---
+                let result = await generator.next();
+                while (!result.done) {
+                    if (signal.aborted) return;
+                    while(isPaused && !signal.aborted) await sleep(100);
+                    if (signal.aborted) return;
+                    drawFunction(result.value);
+                    await sleep(animationSpeed);
+                    result = await generator.next();
+                }
+                drawFunction(result.value); // Draw final state
+                
+            } catch (e) {
+                console.error("Algorithm Error:", e);
+                if (currentAlgorithm === 'custom') alert("Custom Code Error: " + e.message);
+                else alert("An error occurred during visualization.");
+            } finally {
+                if (!signal.aborted) resetControls(true); // Keep final state
+            }
+        }
+
+        // --- Wikipedia API Integration ---
+        async function fetchWikipediaInfo(title) {
+            const endpoint = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=true&explaintext=false&titles=${encodeURIComponent(title)}&origin=*`;
+            const descContent = document.getElementById('tab-content-description');
+            
+            const loaderId = `loader-${Date.now()}`;
+            descContent.innerHTML = `
+                <div class="flex items-center justify-center h-20">
+                    <div id="${loaderId}" class="w-6 h-6 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <p class="text-center text-sm text-gray-500">Fetching from Wikipedia...</p>
+            `;
+
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                
+                const pages = data.query.pages;
+                const pageId = Object.keys(pages)[0];
+                const extract = pages[pageId].extract;
+
+                if (extract) {
+                    descContent.innerHTML = extract + `<p class="mt-4"><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(title)}" target="_blank" class="text-primary-500 hover:underline">Read more on Wikipedia...</a></p>`;
+                } else {
+                    descContent.innerHTML = `<p>Could not find a Wikipedia summary for "${title}".</p>`;
+                }
+            } catch (error) {
+                console.error("Wikipedia API Error:", error);
+                descContent.innerHTML = `<p class="text-red-500">Failed to fetch data. Please check your connection.</p>`;
+            }
+        }
+
+
+        // --- UI & Event Handlers ---
+
+        function selectAlgorithm(algoName) {
+            currentAlgorithm = algoName;
+            
+            sidebarLinks.forEach(link => link.classList.toggle('active', link.dataset.algo === algoName));
+
+            const info = algorithmInfo[algoName];
+            canvasTitle.textContent = info.title;
+            
+            // Add "Fetch API" button to description
+            const descContent = document.getElementById('tab-content-description');
+            descContent.innerHTML = `
+                ${info.description}
+                <div class="mt-6">
+                    <button id="fetchApiBtn" data-wikititle="${info.wikiTitle}" class="w-full px-4 py-2 rounded-md text-sm font-medium bg-primary-600 text-white hover:bg-primary-700">
+                        Fetch Live Description (Wikipedia API)
+                    </button>
+                </div>
+            `;
+            document.getElementById('fetchApiBtn').addEventListener('click', (e) => {
+                fetchWikipediaInfo(e.target.dataset.wikititle);
+            });
+
+            document.getElementById('tab-content-pseudocode').innerHTML = `<pre><code class="language-pseudo">${info.pseudocode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+
+            showTab('description');
+            customCodeTab.style.display = (algoName === 'custom') ? 'block' : 'none';
+            if (algoName === 'custom') showTab('customCode');
+            
+            pathfindingControls.style.display = isPathfindingAlgorithm(algoName) ? 'flex' : 'none';
+
+            resetAlgorithm();
+        }
+
+        function showTab(tabId) {
+            tabs.querySelectorAll('.tab-link').forEach(link => link.classList.toggle('active', link.dataset.tab === tabId));
+            tabContents.forEach(content => content.classList.toggle('hidden', content.id !== `tab-content-${tabId}`));
+        }
+
+        function handlePlayPause() {
+            if (isPaused) {
+                isPaused = false;
+                runAlgorithm(); // Resumes or starts
+            } else {
+                isPaused = true;
+            }
+            updatePlayPauseIcon();
+        }
+
+        function updatePlayPauseIcon() {
+            playIcon.classList.toggle('hidden', !isPaused);
+            pauseIcon.classList.toggle('hidden', isPaused);
+        }
+
+        function resetAlgorithm() {
+            abortController.abort();
+            abortController = new AbortController();
+            resetControls();
+            resizeCanvas(); // This will re-calc array size
+            initializeData(currentAlgorithm);
+            drawCurrentState();
+        }
+        
+        function resetControls(keepRunning = false) {
+            if (!keepRunning) isPaused = true;
+            updatePlayPauseIcon();
+            playPauseBtn.disabled = !currentAlgorithm;
+            resetBtn.disabled = !currentAlgorithm;
+            newDataBtn.disabled = !currentAlgorithm;
+        }
+
+        function handleSpeedChange(e) {
+            animationSpeed = 200 - (e.target.value * 1.9);
+        }
+        
+        function getGridCoords(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const offsetX = (mainCanvas.width - GRID_COLS * cellSize) / 2;
+            const offsetY = (mainCanvas.height - GRID_ROWS * cellSize) / 2;
+            const x = Math.floor((e.clientX - rect.left - offsetX) / cellSize);
+            const y = Math.floor((e.clientY - rect.top - offsetY) / cellSize);
+            if (x < 0 || x >= GRID_COLS || y < 0 || y >= GRID_ROWS) return null;
+            return { x, y };
+        }
+
+        function handleCanvasClick(e) {
+            if (!isPathfindingAlgorithm(currentAlgorithm)) return;
+            const coords = getGridCoords(e);
+            if (!coords) return;
+            
+            const node = grid[coords.y][coords.x];
+            if (!node) return;
+            
+            abortController.abort();
+            resetControls();
+            
+            if (pathfindingMode === 'setStart' && !node.isEnd) {
+                if (startNode) startNode.isStart = false;
+                startNode = node;
+                startNode.isStart = true;
+                node.isWall = false;
+            } else if (pathfindingMode === 'setEnd' && !node.isStart) {
+                if (endNode) endNode.isEnd = false;
+                endNode = node;
+                endNode.isEnd = true;
+                node.isWall = false;
+            } else if (pathfindingMode === 'setWall' && !node.isStart && !node.isEnd) {
+                node.isWall = !node.isWall;
+            }
+            
+            drawPathfinding(grid, [], new Set(), new Set(), true);
+        }
+        
+        function handleCanvasMousemove(e) {
+            if (!isDrawingWalls || !isPathfindingAlgorithm(currentAlgorithm) || pathfindingMode !== 'setWall') return;
+            const coords = getGridCoords(e);
+            if (!coords) return;
+            const node = grid[coords.y][coords.x];
+            if (node && !node.isStart && !node.isEnd) {
+                node.isWall = true;
+                drawPathfinding(grid, [], new Set(), new Set(), true);
+            }
+        }
+        
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            updateThemeIcons();
+            drawCurrentState(); // Redraw for new theme
+        }
+        
+        function updateThemeIcons() {
+             if (document.documentElement.classList.contains('dark')) {
+                document.getElementById('theme-icon-light').classList.add('hidden');
+                document.getElementById('theme-icon-dark').classList.remove('hidden');
+            } else {
+                document.getElementById('theme-icon-light').classList.remove('hidden');
+                document.getElementById('theme-icon-dark').classList.add('hidden');
+            }
+        }
+
+        // --- Initial Load ---
+        window.addEventListener('load', () => {
+            mainCanvas = document.getElementById('visualizerCanvas');
+            canvasContainer = mainCanvas.parentElement;
+            ctx = mainCanvas.getContext('2d');
+            
+            resizeCanvas();
+            resetControls();
+            updateThemeIcons();
+
+            // --- Event Listeners ---
+            
+            document.querySelector('#algorithm-list-sorting').addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && e.target.dataset.algo) {
+                    e.preventDefault();
+                    selectAlgorithm(e.target.dataset.algo);
+                }
+            });
+            document.querySelector('#algorithm-list-pathfinding').addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && e.target.dataset.algo) {
+                    e.preventDefault();
+                    selectAlgorithm(e.target.dataset.algo);
+                }
+            });
+            document.querySelector('#algorithm-list-custom').addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && e.target.dataset.algo) {
+                    e.preventDefault();
+                    selectAlgorithm(e.target.dataset.algo);
+                }
+            });
+
+            playPauseBtn.addEventListener('click', handlePlayPause);
+            resetBtn.addEventListener('click', resetAlgorithm);
+            newDataBtn.addEventListener('click', resetAlgorithm);
+            speedSlider.addEventListener('input', handleSpeedChange);
+            handleSpeedChange({ target: speedSlider });
+
+            tabs.addEventListener('click', (e) => {
+                if (e.target.classList.contains('tab-link') && e.target.dataset.tab) {
+                    e.preventDefault(); showTab(e.target.dataset.tab);
+                }
+            });
+            
+            pathfindingControls.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' && e.target.dataset.mode) {
+                    pathfindingMode = e.target.dataset.mode;
+                    pathfindingControls.querySelectorAll('button').forEach(btn => {
+                        btn.classList.toggle('bg-gray-400', btn.dataset.mode === pathfindingMode);
+                        btn.classList.toggle('bg-blue-100', btn.dataset.mode === 'setStart' && btn.dataset.mode !== pathfindingMode);
+                        btn.classList.toggle('bg-red-100', btn.dataset.mode === 'setEnd' && btn.dataset.mode !== pathfindingMode);
+                        btn.classList.toggle('bg-gray-200', btn.dataset.mode === 'setWall' && btn.dataset.mode !== pathfindingMode);
+                    });
+                }
+            });
+            
+            mainCanvas.addEventListener('click', handleCanvasClick);
+            mainCanvas.addEventListener('mousedown', (e) => { isDrawingWalls = true; handleCanvasMousemove(e); });
+            mainCanvas.addEventListener('mouseup', () => { isDrawingWalls = false; });
+            mainCanvas.addEventListener('mouseleave', () => { isDrawingWalls = false; });
+            mainCanvas.addEventListener('mousemove', handleCanvasMousemove);
+            
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+            window.addEventListener('resize', resizeCanvas);
+        });
+    </script>
+</body>
+</html>
